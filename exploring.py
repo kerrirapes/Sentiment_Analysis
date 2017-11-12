@@ -105,7 +105,7 @@ def create_feature_dataframe(df, features_master):
 
 def pca_components(df, features_master):
     df2 = create_feature_dataframe(df, features_master)
-    pca = PCA(n_components=pca_components)
+    pca = PCA(n_components=75)
     pca.fit(df2)
     print("Explained_variance_ratio: {} ".format(pca.explained_variance_ratio_))
     return pca.transform(df2)

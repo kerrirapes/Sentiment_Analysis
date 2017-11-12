@@ -43,16 +43,17 @@ for i, row in df_labeled.iterrows():
         df.set_value(idx,'cluster', row.cluster)
 
 
-#pca = exploring.pca_components(df, features_master)
+pca = exploring.pca_components(df, features_master)
+df['pca'] = list(pca)
 
-max_iterations = 2
+max_iterations = 20
 
 
 
 for i in range(max_iterations):
     df = df.sort_values(by=['cluster'], ascending=False)
     df = df.reset_index(drop=True)
-    x = np.array(list(df.features))
+    x = np.array(list(df.pca))
     y = np.array(list(df.cluster))
     n_total_samples = len(y)
     n_labeled_points = (df.cluster.values == -1).argmax()
@@ -83,9 +84,9 @@ for i in range(max_iterations):
     for i in uncertainty_index:
         if df.iloc[i]['cluster'] == -1:
             labeled_count += 1
-            print(pred_entropies[i], lp_model.predict(x[i]))
+            print(pred_entropies[i], lp_model.predict([x[i]]))
             keyboard_input(df.iloc[i].text)
-        if labeled_count >= 5:
+        if labeled_count >= 10:
             break
 
     
