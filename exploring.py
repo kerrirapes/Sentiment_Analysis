@@ -14,6 +14,7 @@ from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
+import pruning_dict
 #import visuals as vs
 
 json_location = "D:\Intelligens\challenge_en.json"
@@ -23,31 +24,17 @@ def preprocess_data():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i > 3000:
+                if i >= 3000:
                    break
                 json_lines.append(json.loads(line))
            
         return pd.DataFrame.from_dict(json_lines)
 
-    def remove_nonalphanumeric(message):
-        message = message.lower()
-        delchar_table = {ord(c): None for c in message if c not in 'abcdefghijklmnopqrstuvwxyz0123456789 '}
-        return message.translate(delchar_table)
-    
-    def build_vocabulary(df, word_drop=True):
-        vocabulary = Counter()
-        for message in df:
-            message = remove_nonalphanumeric(message)
-            vocabulary = vocabulary + Counter(message.split())
-        if word_drop == True:
-            for key, count in dropwhile(lambda key_count: key_count[1] >= (len(df) * .01), vocabulary.most_common()):
-                del vocabulary[key]
-        return vocabulary
     
     def label_features(df, remove_dpls=False):
         dupl = 0
         for i,row in df.iterrows():
-            message = remove_nonalphanumeric(row.text)
+            message = pruning_dict.remove_nonalphanumeric(row.text)
             features = Counter(message.split()) & features_master
             features = features + features_master
             features = list(np.array(list(features.values())) - 1)
@@ -56,17 +43,25 @@ def preprocess_data():
                 df.set_value(i,'features', None)
             else:
                 df.set_value(i,'features',features)
+        return dupl
     
     
     df = load_json()
     df = df[['text']]
-    for _ in range(2):
-        vocabulary = build_vocabulary(df.text)
+    print("Original message count {}".format(len(df)))
+    dupl = 0
+    for _ in range(3):
+        
+        vocabulary = pruning_dict.build_vocabulary(df.text)
+        print("Original vocab size {}".format(len(vocabulary)))
+        vocabulary = pruning_dict.prune_vocab(vocabulary)
+        print("Original vocab size {}".format(len(vocabulary)))
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
-        remove_dpls = True if _ < 1 else False
-        label_features(df, remove_dpls)
+        remove_dpls = True if _ <= 2 or dupl > 0 else False
+        dupl = label_features(df, remove_dpls)
         df = df[pd.notnull(df['features'])]
+        print("Final message count {}".format(len(df)))
         
     return df, features_master
 
@@ -108,18 +103,17 @@ def create_feature_dataframe(df, features_master):
     df2 = pd.DataFrame(list(df.features), columns=range(len(features_master)))
     return df2
 
+def pca_components(df, features_master):
+    df2 = create_feature_dataframe(df, features_master)
+    pca = PCA(n_components=pca_components)
+    pca.fit(df2)
+    print("Explained_variance_ratio: {} ".format(pca.explained_variance_ratio_))
+    return pca.transform(df2)
 
 def pca_explore(df, features_master):
     for pca_components in range(1,2):
         print("pca_components: {}".format(pca_components))
-        df2 = create_feature_dataframe(df, features_master)
-        pca = PCA(n_components=pca_components)
-        pca.fit(df2)
         
-        #pca_samples = pca.transform(log_samples)
-        #print(len(df2))
-        print("Explained_variance_ratio: {} ".format(pca.explained_variance_ratio_))
-        df2 = pca.transform(df2)
         #print(len(df2))
         # Generate PCA results plot
         #pca_results = vs.pca_results(df2, pca)
