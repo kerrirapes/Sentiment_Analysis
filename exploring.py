@@ -50,7 +50,7 @@ def preprocess_data():
     df = df[['text']]
     print("Original message count {}".format(len(df)))
     dupl = 0
-    for _ in range(3):
+    for _ in range(2):
         
         vocabulary = pruning_dict.build_vocabulary(df.text)
         print("Original vocab size {}".format(len(vocabulary)))

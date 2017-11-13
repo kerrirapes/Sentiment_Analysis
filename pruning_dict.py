@@ -13,7 +13,16 @@ def build_vocabulary(messages, word_drop=True):
         vocabulary = Counter()
         for message in messages:
             message = remove_nonalphanumeric(message)
-            vocabulary = vocabulary + Counter(message.split())
+            message_split = message.split()
+            gram_count = 3
+            grams = []
+            for g in range(gram_count):
+                for i in range(len(message_split) - 1):
+                    gram = ''
+                    for n in range(g):
+                        gram = gram + message_split[i+n] + ' '
+                    grams.append(gram)
+            vocabulary = vocabulary + Counter(message_split) + Counter(grams)
         if word_drop == True:
             for key, count in dropwhile(
                                         lambda key_count: key_count[1] >= (len(messages) * .01),
@@ -53,7 +62,7 @@ def prune_vocab(vocabulary):
             polar_words.append(words[index])
     
     vocabulary = Counter(polar_words) & vocabulary
-  
+    print(Counter(polar_words))
     print("Length of polar_words {}".format(len(polar_words)))
     return vocabulary
     #except:
