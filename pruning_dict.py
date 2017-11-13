@@ -43,7 +43,7 @@ def prune_vocab(vocabulary):
     for word in list(words):
         ratios.append(info_v[word] / express_v[word])
     
-    threshold = int(len(words) * .2)
+    threshold = int(len(words) * .1)
     top20 = np.argsort(ratios)[-threshold:]
     bottom20 = np.argsort(ratios)[:threshold]
 

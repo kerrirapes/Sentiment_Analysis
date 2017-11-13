@@ -40,8 +40,6 @@ df_labeled.to_pickle('labeled_previous.pkl')
 
 
 
-
-
 for i, row in df_labeled.iterrows():
     if row.text in list(df.text):
         idx = df.index[df['text'] == row.text]
@@ -51,8 +49,7 @@ for i, row in df_labeled.iterrows():
 pca = exploring.pca_components(df, features_master)
 df['pca'] = list(pca)
 
-max_iterations = 1
-
+max_iterations = 10
 
 
 for i in range(max_iterations):
@@ -70,7 +67,7 @@ for i in range(max_iterations):
         break
 
 
-    lp_model = label_propagation.LabelSpreading(gamma=0.25, max_iter=max_iterations)
+    lp_model = label_propagation.LabelSpreading(gamma=0.25, max_iter=2)
     lp_model.fit(x, y)
 
     
@@ -82,22 +79,18 @@ for i in range(max_iterations):
 
     # Calculate uncertainty values for each transduced distribution
     pred_entropies = stats.distributions.entropy(lp_model.label_distributions_.T)
-    uncertainty_index = np.argsort(pred_entropies)
+    uncertainty_index = np.argsort(pred_entropies)[-10:]
     
     labeled_count = 0
     for i in uncertainty_index:
         if df.iloc[i]['cluster'] == -1:
-            labeled_count += 1
             print(pred_entropies[i], lp_model.predict([x[i]]))
             keyboard_input(df.iloc[i].text)
-        if labeled_count >= 10:
-            break
 
-print(df_labeled.groupby('cluster').count())   
+
+   
 df_labeled = pd.concat([df, df_labeled], axis=0, join='outer', ignore_index=True)
 df_labeled = df_labeled.drop_duplicates(subset='text', keep="first")
-print(df_labeled.groupby('cluster').count())
-pause = input("pause")
 df_labeled.to_pickle('labeled.pkl')
 
 predictions = lp_model.predict(x)

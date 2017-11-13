@@ -54,13 +54,16 @@ def preprocess_data():
         
         vocabulary = pruning_dict.build_vocabulary(df.text)
         print("Original vocab size {}".format(len(vocabulary)))
-        vocabulary = pruning_dict.prune_vocab(vocabulary)
-        print("Final vocab size {}".format(len(vocabulary)))
+        
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
-        remove_dpls = True if _ <= 2 or dupl > 0 else False
+        remove_dpls = True if _ <= 0 else False #or dupl > 0 else False
         dupl = label_features(df, remove_dpls)
         df = df[pd.notnull(df['features'])]
+        
+        vocabulary = pruning_dict.prune_vocab(vocabulary)
+        print("Final vocab size {}".format(len(vocabulary)))
+        
         print("Final message count {}".format(len(df)))
         
     return df, features_master
