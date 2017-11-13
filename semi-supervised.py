@@ -37,6 +37,11 @@ df["cluster"] = -1.0
 #df.to_pickle('labeled.pkl')
 df_labeled = pd.read_pickle('labeled.pkl')
 df_labeled.to_pickle('labeled_previous.pkl')
+
+
+
+
+
 for i, row in df_labeled.iterrows():
     if row.text in list(df.text):
         idx = df.index[df['text'] == row.text]
@@ -88,10 +93,13 @@ for i in range(max_iterations):
         if labeled_count >= 10:
             break
 
-    
+print(df_labeled.groupby('cluster').count())   
+df_labeled = pd.concat([df, df_labeled], axis=0, join='outer', ignore_index=True)
+df_labeled = df_labeled.drop_duplicates(subset='text', keep="first")
+print(df_labeled.groupby('cluster').count())
+pause = input("pause")
+df_labeled.to_pickle('labeled.pkl')
 
-
-df.to_pickle('labeled.pkl')
 predictions = lp_model.predict(x)
 df['prediction'] = predictions
 
