@@ -55,7 +55,7 @@ def preprocess_data():
         vocabulary = pruning_dict.build_vocabulary(df.text)
         print("Original vocab size {}".format(len(vocabulary)))
         vocabulary = pruning_dict.prune_vocab(vocabulary)
-        print("Original vocab size {}".format(len(vocabulary)))
+        print("Final vocab size {}".format(len(vocabulary)))
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
         remove_dpls = True if _ <= 2 or dupl > 0 else False
@@ -105,7 +105,7 @@ def create_feature_dataframe(df, features_master):
 
 def pca_components(df, features_master):
     df2 = create_feature_dataframe(df, features_master)
-    pca = PCA(n_components=75)
+    pca = PCA(n_components=10)
     pca.fit(df2)
     print("Explained_variance_ratio: {} ".format(pca.explained_variance_ratio_))
     return pca.transform(df2)

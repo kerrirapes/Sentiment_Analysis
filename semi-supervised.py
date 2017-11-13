@@ -46,7 +46,7 @@ for i, row in df_labeled.iterrows():
 pca = exploring.pca_components(df, features_master)
 df['pca'] = list(pca)
 
-max_iterations = 20
+max_iterations = 1
 
 
 
@@ -78,7 +78,6 @@ for i in range(max_iterations):
     # Calculate uncertainty values for each transduced distribution
     pred_entropies = stats.distributions.entropy(lp_model.label_distributions_.T)
     uncertainty_index = np.argsort(pred_entropies)
-    print(pred_entropies)
     
     labeled_count = 0
     for i in uncertainty_index:
