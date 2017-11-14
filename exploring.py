@@ -24,7 +24,7 @@ def preprocess_data():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 300:
+                if i >= 5000:
                    break
                 json_lines.append(json.loads(line))
            
@@ -50,7 +50,7 @@ def preprocess_data():
     df = df[['text']]
     print("Original message count {}".format(len(df)))
     dupl = 0
-    for _ in range(2):
+    for _ in range(1):
         
         vocabulary = pruning_dict.build_vocabulary(df.text)
         print("Original vocab size {}".format(len(vocabulary)))
