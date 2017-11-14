@@ -15,16 +15,28 @@ from sklearn.mixture import GaussianMixture
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 import pruning_dict
+import os.path
+import pickle
 #import visuals as vs
 
 json_location = "D:\Intelligens\challenge_en.json"
+
+def save_obj(obj, name ):
+    with open( name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name ):
+    with open( name + '.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
 
 def preprocess_data():
     def load_json():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 1000:
+                if i >= 5000:
                    break
                 json_lines.append(json.loads(line))
            
@@ -52,8 +64,14 @@ def preprocess_data():
     dupl = 0
     for _ in range(1):
         
-        vocabulary = pruning_dict.build_vocabulary(df.text)
-        print("Original vocab size {}".format(len(vocabulary)))
+        try:
+            vocabulary = load_obj('json_vocab')
+            print("opened vocab")
+        except:
+            vocabulary = pruning_dict.build_vocabulary(df.text)
+            save_obj(vocabulary, 'json_vocab' )
+            print("Built vocab")
+            #print("Original vocab size {}".format(len(vocabulary)))
         
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
@@ -62,9 +80,9 @@ def preprocess_data():
         df = df[pd.notnull(df['features'])]
         
         vocabulary = pruning_dict.prune_vocab(vocabulary)
-        print("Final vocab size {}".format(len(vocabulary)))
+        #print("Final vocab size {}".format(len(vocabulary)))
         
-        print("Final message count {}".format(len(df)))
+        #print("Final message count {}".format(len(df)))
         
     return df, features_master
 
