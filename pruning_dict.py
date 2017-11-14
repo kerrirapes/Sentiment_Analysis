@@ -31,21 +31,34 @@ def build_vocabulary(messages, word_drop=True):
         return vocabulary
 
 def remove_nonalphanumeric(message):
+    try:        
         message = message.lower()
         delchar_table = {ord(c): None for c in message if c not in 'abcdefghijklmnopqrstuvwxyz0123456789 '}
         return message.translate(delchar_table)
+    except:
+        print(message)
+        return message
     
 def prune_vocab(vocabulary):
     #try:
-    df = pd.read_pickle('labeled.pkl')
+    labels = ['machine_labeled.pkl', 'labeled.pkl']
+    df = pd.DataFrame()
+    for l in labels:
+        df_temp = pd.read_pickle(l)
+        df = pd.concat([df_temp, df], axis=0, join='outer', ignore_index=True)
+        df = df.drop_duplicates(subset='text', keep="first")
     df = df.sort_values(by=['cluster'], ascending=False)
+    df =  df[df.cluster != -1]
+    df = df[pd.notnull(df['features'])]
     df = df.reset_index(drop=True)
+
     
     info = df.groupby('cluster').get_group(0)
     info_v = build_vocabulary(info.text, word_drop=True)
     express = df.groupby('cluster').get_group(1)
     express_v = build_vocabulary(express.text, word_drop=True)
     common = info_v & express_v
+    # TODO add polarizing words that are not common
     
     words = list(common.keys())
     ratios = []
@@ -62,8 +75,8 @@ def prune_vocab(vocabulary):
             polar_words.append(words[index])
     
     vocabulary = Counter(polar_words) & vocabulary
-    print(Counter(polar_words))
-    print("Length of polar_words {}".format(len(polar_words)))
+    #print(Counter(polar_words))
+    #print("Length of polar_words {}".format(len(polar_words)))
     return vocabulary
     #except:
        # print("pruning error")
