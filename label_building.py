@@ -15,6 +15,7 @@ from sklearn.svm import SVC
 from sklearn.ensemble import  AdaBoostClassifier
 from collections import Counter
 import time
+import os
 
 
 
@@ -59,7 +60,7 @@ while LM_final - LM_previous > 0:
     print(df.groupby('cluster').count())
     df_train =  df[df.cluster != -1]       
     df = df[df.cluster == -1]
-    print(len(df))
+
     
     X_train, X_test, y_train, y_test = train_test_split(list(df_train.features),
                                                         list(df_train.cluster),
@@ -118,7 +119,8 @@ try:
 except:
     print("Only one group")
     
-    
+os.remove('df.pkl')
+os.remove('vocabulary.pkl')   
 
 end = time.time()
 print("Total Run-Time:  {}".format(round((end - start)/60,2)))

@@ -36,7 +36,7 @@ def preprocess_data():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 5000:
+                if i >= 50:
                    break
                 json_lines.append(json.loads(line))
            
@@ -57,32 +57,28 @@ def preprocess_data():
                 df.set_value(i,'features',features)
         return dupl
     
-    
-    df = load_json()
+
+    try:
+        df = load_obj('df')
+    except:
+        df = load_json()
+        save_obj(df, 'df' )
     df = df[['text']]
     print("Original message count {}".format(len(df)))
-    dupl = 0
-    for _ in range(1):
-        
-        try:
-            vocabulary = load_obj('json_vocab')
-            print("opened vocab")
-        except:
-            vocabulary = pruning_dict.build_vocabulary(df.text)
-            save_obj(vocabulary, 'json_vocab' )
-            print("Built vocab")
-            #print("Original vocab size {}".format(len(vocabulary)))
-        
-        features_master = Counter(list(vocabulary.keys()))
-        df["features"] = [[0] * len(vocabulary)] * len(df)
-        remove_dpls = True if _ <= 0 else False #or dupl > 0 else False
-        dupl = label_features(df, remove_dpls)
-        df = df[pd.notnull(df['features'])]
-        
-        vocabulary = pruning_dict.prune_vocab(vocabulary)
-        #print("Final vocab size {}".format(len(vocabulary)))
-        
-        #print("Final message count {}".format(len(df)))
+    
+    try:
+        vocabulary = load_obj('vocabulary')
+    except:
+        vocabulary = pruning_dict.build_vocabulary(df.text)
+        save_obj(vocabulary, 'vocabulary' )
+    vocabulary = pruning_dict.prune_vocab(vocabulary)
+    features_master = Counter(list(vocabulary.keys()))
+    df["features"] = [[0] * len(vocabulary)] * len(df)
+    #remove_dpls = True if _ <= 0 else False #or dupl > 0 else False
+    dupl = label_features(df, True)
+    df = df[pd.notnull(df['features'])]
+            
+    
         
     return df, features_master
 
