@@ -41,8 +41,7 @@ df = df[df.cluster != -1]
 
 X_train, X_test, y_train, y_test = train_test_split(list(df.features),
                                                     list(df.cluster),
-                                                    test_size=0.33,
-                                                    random_state=42)
+                                                    test_size=0.33)
 
 names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
          "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
@@ -86,13 +85,13 @@ best = {'score': 0,
 parameters = {"hidden_layer_sizes": [25, 300]
               }
 def run_clf(activation_kw, solver_kw, **kwargs):
-    clf = MLPClassifier(alpha=1, max_iter=10000, activation=activation_kw, solver=solver_kw, **kwargs)
+    clf = MLPClassifier(alpha=1, max_iter=500, activation=activation_kw, solver=solver_kw, **kwargs)
     clf.fit(X_train, y_train)
     score = clf.score(X_test, y_test)
     return score
 
 for solver_kw in ['lbfgs', 'sgd', 'adam']: 
-    for activation_kw in ['identity', 'logistic', 'tanh']:
+    for activation_kw in ['identity',  'tanh']:
         findings = {}
         for _ in range(100):
             kwargs = Gaussian_hyperpara_selection.next_values(parameters, findings)
@@ -106,7 +105,7 @@ for solver_kw in ['lbfgs', 'sgd', 'adam']:
             best['solver'] = solver_kw
             best['activation'] =activation_kw
             best['parameters'] = findings[max(findings)]
-        if (time.time() - start) > 120:
+        if (time.time() - start) > 30:
             start = time.time()
             print("BREAK FOR TIME")
             break
@@ -121,3 +120,5 @@ clf = GaussianProcessClassifier(1.0 * RBF(1.0))
 clf.fit(X_train, y_train)
 score = clf.score(X_test, y_test)
 print("Gaussian Classifier Score {}".format(score))
+
+
