@@ -30,14 +30,19 @@ count = 0
 while LM_final - LM_previous > 0:
     count += 1
     print("Count: {}".format(count))
+    
+    df_ml = pd.read_pickle('machine_labeled.pkl')
+    if count <= 1:
+        df_ml = df_ml[df_ml.index == 0]
+        df_ml.to_pickle('machine_labeled.pkl')
+    LM_previous = len(df_ml[df_ml.cluster != -1])
+    print("Machine Labeled Messages Size: {}".format(LM_previous))
+    
     df, features_master = exploring.preprocess_data()
     df["cluster"] = -1.0
     df_orgional = df.copy()
     
-    df_ml = pd.read_pickle('machine_labeled.pkl')
-    #df_ml = df_ml[df_ml.index == 0]
-    LM_previous = len(df_ml[df_ml.cluster != -1])
-    print("Machine Labeled Messages Size: {}".format(len(df_ml[df_ml.cluster != -1])))
+    
     
     for label in [df_labeled]:
         for i, row in label.iterrows():
@@ -70,7 +75,7 @@ while LM_final - LM_previous > 0:
     names = ["Linear SVM",  "Neural Net", "AdaBoost"]
     
     classifiers = [
-        SVC(kernel="linear", C=0.025),
+        SVC(gamma=2, C=1),
         MLPClassifier(alpha=1),
         AdaBoostClassifier()]
     

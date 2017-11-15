@@ -110,3 +110,6 @@ try:
         print("")
 except:
     print("Only one group")
+   
+os.remove('df.pkl')
+os.remove('vocabulary.pkl')

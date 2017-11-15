@@ -6,7 +6,7 @@ Created on Sun Nov 12 23:35:08 2017
 
 Supervised learning
 """
-
+import os
 import pandas as pd
 import numpy as np
 import exploring
@@ -33,7 +33,7 @@ df_labeled = pd.read_pickle('labeled.pkl')
 for i, row in df_labeled.iterrows():
     if row.text in list(df.text):
         idx = df.index[df['text'] == row.text]
-        df.set_value(idx,'cluster', row.cluster)
+        df.set_value(idx[0],'cluster', row.cluster)
         
 df = df[df.cluster != -1]
 #pca = exploring.pca_components(df, features_master)
@@ -75,7 +75,7 @@ print("")
 print("The average score was {}".format(score_sum/len(names)))
 print("The best classifier was {} with a score of {}".format(best_classifier, best_score))
 
-
+'''
 start = time.time()
 best = {'score': 0,
         'solver': 'lbfgs',
@@ -120,5 +120,7 @@ clf = GaussianProcessClassifier(1.0 * RBF(1.0))
 clf.fit(X_train, y_train)
 score = clf.score(X_test, y_test)
 print("Gaussian Classifier Score {}".format(score))
+'''
 
-
+os.remove('df.pkl')
+os.remove('vocabulary.pkl')

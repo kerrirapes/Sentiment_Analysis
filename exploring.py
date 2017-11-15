@@ -36,7 +36,7 @@ def preprocess_data():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 50:
+                if i >= 5000:
                    break
                 json_lines.append(json.loads(line))
            
@@ -53,33 +53,39 @@ def preprocess_data():
             if remove_dpls == True and features in list(df.features):
                 dupl += 1
                 df.set_value(i,'features', None)
+                df = df[pd.notnull(df['features'])]
             else:
                 df.set_value(i,'features',features)
-        return dupl
+
+        return df, dupl
     
 
     try:
         df = load_obj('df')
+        print("Loading df...")
     except:
         df = load_json()
+        df = df[['text']]
+        df.drop_duplicates(['text'], keep='first')
+        vocabulary = pruning_dict.build_vocabulary(df.text)
+        features_master = Counter(list(vocabulary.keys()))
+        df["features"] = [[0] * len(vocabulary)] * len(df)
+        df, dupl = label_features(df, True)
         save_obj(df, 'df' )
-    df = df[['text']]
+    
     print("Original message count {}".format(len(df)))
     
     try:
         vocabulary = load_obj('vocabulary')
+        print("Loading Vocabulary...")
     except:
         vocabulary = pruning_dict.build_vocabulary(df.text)
         save_obj(vocabulary, 'vocabulary' )
     vocabulary = pruning_dict.prune_vocab(vocabulary)
     features_master = Counter(list(vocabulary.keys()))
     df["features"] = [[0] * len(vocabulary)] * len(df)
-    #remove_dpls = True if _ <= 0 else False #or dupl > 0 else False
-    dupl = label_features(df, True)
-    df = df[pd.notnull(df['features'])]
-            
+    df, dupl = label_features(df, False)
     
-        
     return df, features_master
 
 
