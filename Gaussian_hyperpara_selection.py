@@ -63,7 +63,7 @@ def hyperparam_wslist(scores, parameters, n_hidden_range):
         return int(fit_curve(parameters, scores, n_hidden_choices))
     else:
         step = (max_n_hidden - min_n_hidden) / RESOLUTION
-        n_hidden_choices = [ min_n_hidden + step * x for x in range(int(RESOLUTION)) ]
+        n_hidden_choices = [ min_n_hidden + + random.random()/1000 + step * x for x in range(int(RESOLUTION)) ]
         return fit_curve(parameters, scores, n_hidden_choices)
 
 
