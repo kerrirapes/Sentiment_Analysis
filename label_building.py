@@ -25,17 +25,25 @@ def relate_dfs(df_features, df_clusters):
                 df_features.set_value(idx,'cluster', row.cluster)
     return df_features
 
-def group_predict(df):
+def survey_clfs(message):
+    predictions = []
+    for name, clf in zip(names, clfs):
+        predictions.append(clf.predict([message])[0])
+    return predictions
+
+def label_dataset(df):
     for i, row in df.iterrows():
-        message = row.features
-        predictions = []
-        for name, clf in zip(names, clfs):
-            predictions.append(clf.predict([message])[0])
+        predictions = survey_clfs(row.features)
         keys = list(Counter(predictions))
         if len(keys) <= 1:
             df.set_value(i,'cluster', keys[0])
     return df
 
+def group_predict(df):
+    predictions = []
+    for i, row in df.iterrows():
+        predictions.append(Counter(survey_clfs(row.features)).most_common(1)[0][0])     
+    return predictions
 
 start = time.time()
 
@@ -64,7 +72,7 @@ while LM_final - LM_previous > 0:
     df_validation = relate_dfs(df, [df_validation])
     df_validation = df_validation.copy()
     df_validation = df_validation[df_validation.cluster != -1]
-    print(df_validation.groupby('cluster').count())
+    #print(df_validation.groupby('cluster').count())
     df = relate_dfs(df, [df_labeled, df_ml])
 
     df_train =  df[df.cluster != -1]       
@@ -89,11 +97,20 @@ while LM_final - LM_previous > 0:
             clfs.append(clf.fit(X_train, y_train))
             score = clf.score(X_test, y_test)
             print("Score for {} was {}".format(name, round(score,2)))
+            
+    df_validation['prediction'] = group_predict(df_validation)
+    accuracy = df_validation[df_validation.cluster == df_validation.prediction].count().features / len(df_validation)
+    print("Accuracy: {}%".format(round(accuracy * 100, 2)))
+    #print(df_validation.groupby('cluster').count())
+    df_validation = df_validation.drop('prediction', 1)
+    #print(df_validation.groupby('cluster').count())
+    
+    '''
     for name, clf in zip(names, clfs):
         score = clf.score(list(df_validation.features), list(df_validation.cluster))
         print("The real score for {} was {}".format(name, round(score,2)))
-    
-    df = group_predict(df)
+    '''
+    df = label_dataset(df)
         
     print(df.groupby('cluster').count())
     
@@ -121,6 +138,12 @@ os.remove('vocabulary.pkl')
 end = time.time()
 print("Total Run-Time:  {}".format(round((end - start)/60,2)))
 
+
+df_validation['prediction'] = group_predict(df_validation)
+accuracy = df_validation[df_validation.cluster == df_validation.prediction].count().features / len(df_validation)
+print("Accuracy: {}%".format(round(accuracy * 100, 2)))
+
+'''
 df_labeled = pd.read_pickle('labeled.pkl')
 
 print(df.groupby('cluster').count())
@@ -131,3 +154,4 @@ df = relate_dfs(df, [df_labeled])
 df = group_predict(df)
 print(df.groupby('cluster').count())
 print("Accuracy: {}%".format(round(df[df.cluster == df.answers].count().features / len(df) * 100, 2))) 
+'''

@@ -36,7 +36,7 @@ def preprocess_data():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 5000:
+                if i >= 3000:
                    break
                 json_lines.append(json.loads(line))
            
