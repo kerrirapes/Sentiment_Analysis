@@ -75,52 +75,59 @@ print("")
 print("The average score was {}".format(score_sum/len(names)))
 print("The best classifier was {} with a score of {}".format(best_classifier, best_score))
 
-'''
+
 start = time.time()
 best = {'score': 0,
         'solver': 'lbfgs',
         'activation': 'relu',
         'parameters': {'hidden_layer_sizes': 25} }
 
-parameters = {"hidden_layer_sizes": [25, 300]
+parameters = {"hidden_layer_sizes": [25, 500],
+              "alpha": [0,1.0]
               }
-def run_clf(activation_kw, solver_kw, **kwargs):
-    clf = MLPClassifier(alpha=1, max_iter=500, activation=activation_kw, solver=solver_kw, **kwargs)
+def run_clf( **kwargs):
+    clf = MLPClassifier( max_iter=500,  **kwargs)
     clf.fit(X_train, y_train)
     score = clf.score(X_test, y_test)
     return score
 
-for solver_kw in ['lbfgs', 'sgd', 'adam']: 
-    for activation_kw in ['identity',  'tanh']:
-        findings = {}
-        for _ in range(100):
-            kwargs = Gaussian_hyperpara_selection.next_values(parameters, findings)
-            score = run_clf(activation_kw, solver_kw, **kwargs)
-            findings[score] = kwargs
-        print("Activation {} Solver {} Parameters {}".format(activation_kw, solver_kw,
-                                                                                  findings[max(findings)]))
-        print("Score:   {}".format(run_clf(activation_kw, solver_kw, **findings[max(findings)])))
-        if score > best['score']:
-            best['score'] = score
-            best['solver'] = solver_kw
-            best['activation'] =activation_kw
-            best['parameters'] = findings[max(findings)]
-        if (time.time() - start) > 30:
-            start = time.time()
-            print("BREAK FOR TIME")
-            break
-            
+#for solver_kw in ['lbfgs', 'sgd', 'adam']: 
+#    for activation_kw in ['identity',  'tanh']:
+findings = {}
+for _ in range(200): 
+    kwargs = Gaussian_hyperpara_selection.next_values(parameters, findings)
+    score = run_clf( **kwargs)
+    findings[score] = kwargs
+    '''
+    print("Activation {} Solver {} Parameters {}".format(activation_kw, solver_kw,
+                                                                              findings[max(findings)]))
+    print("Score:   {}".format(run_clf(activation_kw, solver_kw, **findings[max(findings)])))
+    '''
+    if score > best['score']:
+        best['score'] = score
+        #best['solver'] = solver_kw
+        #best['activation'] =activation_kw
+        best['parameters'] = findings[max(findings)]
+    if (time.time() - start) > 180:
+        start = time.time()
+        print("BREAK FOR TIME")
+        break
+
+'''            
 print("Activation {} Solver {} Parameters {}".format(best['activation'],
                                                                           best['solver'],
                                                                           best['parameters']))
-                                                                                            
-print("Best Score:   {}".format(run_clf(best['activation'], best['solver'], **best['parameters'])))
+'''   
+print(findings)                                                                                        
+print("Best Score:   {}".format(run_clf(**best['parameters'])))
+print(best['parameters'])
+
 
 clf = GaussianProcessClassifier(1.0 * RBF(1.0))
 clf.fit(X_train, y_train)
 score = clf.score(X_test, y_test)
 print("Gaussian Classifier Score {}".format(score))
-'''
+
 
 os.remove('df.pkl')
 os.remove('vocabulary.pkl')

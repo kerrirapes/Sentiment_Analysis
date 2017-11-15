@@ -101,15 +101,8 @@ while LM_final - LM_previous > 0:
     df_validation['prediction'] = group_predict(df_validation)
     accuracy = df_validation[df_validation.cluster == df_validation.prediction].count().features / len(df_validation)
     print("Accuracy: {}%".format(round(accuracy * 100, 2)))
-    #print(df_validation.groupby('cluster').count())
     df_validation = df_validation.drop('prediction', 1)
-    #print(df_validation.groupby('cluster').count())
     
-    '''
-    for name, clf in zip(names, clfs):
-        score = clf.score(list(df_validation.features), list(df_validation.cluster))
-        print("The real score for {} was {}".format(name, round(score,2)))
-    '''
     df = label_dataset(df)
         
     print(df.groupby('cluster').count())

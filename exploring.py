@@ -43,7 +43,7 @@ def preprocess_data():
         return pd.DataFrame.from_dict(json_lines)
 
     
-    def label_features(df, remove_dpls=False):
+    def label_features(df, features_master, remove_dpls=False):
         dupl = 0
         for i,row in df.iterrows():
             message = pruning_dict.remove_nonalphanumeric(row.text)
@@ -70,7 +70,7 @@ def preprocess_data():
         vocabulary = pruning_dict.build_vocabulary(df.text)
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
-        df, dupl = label_features(df, True)
+        df, dupl = label_features(df, features_master, True)
         save_obj(df, 'df' )
     
     print("Original message count {}".format(len(df)))
@@ -84,7 +84,7 @@ def preprocess_data():
     vocabulary = pruning_dict.prune_vocab(vocabulary)
     features_master = Counter(list(vocabulary.keys()))
     df["features"] = [[0] * len(vocabulary)] * len(df)
-    df, dupl = label_features(df, False)
+    df, dupl = label_features(df, features_master, False)
     
     return df, features_master
 
