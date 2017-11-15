@@ -23,9 +23,18 @@ def relate_dfs(df_features, df_clusters):
             if row.text in list(df_features.text):
                 idx = df_features.index[df_features['text'] == row.text]
                 df_features.set_value(idx,'cluster', row.cluster)
-    
-    print(df.groupby('cluster').count())
     return df_features
+
+def group_predict(df):
+    for i, row in df.iterrows():
+        message = row.features
+        predictions = []
+        for name, clf in zip(names, clfs):
+            predictions.append(clf.predict([message])[0])
+        keys = list(Counter(predictions))
+        if len(keys) <= 1:
+            df.set_value(i,'cluster', keys[0])
+    return df
 
 
 start = time.time()
@@ -44,7 +53,6 @@ while LM_final - LM_previous > 0:
     
     df_ml = pd.read_pickle('machine_labeled.pkl')
     if count <= 1:
-        #df_ml = df_ml[df_ml.index == 0]
         df_ml = pd.DataFrame(columns=['text', 'features', 'cluster'])
         df_ml.to_pickle('machine_labeled.pkl')
     LM_previous = len(df_ml[df_ml.cluster != -1])
@@ -53,12 +61,10 @@ while LM_final - LM_previous > 0:
     df, features_master = exploring.preprocess_data()
     df["cluster"] = -1.0
     
-    #df_orgional = df.copy()
-    
     df_validation = relate_dfs(df, [df_validation])
     df_validation = df_validation.copy()
     df_validation = df_validation[df_validation.cluster != -1]
-    print(df.groupby('cluster').count())
+    print(df_validation.groupby('cluster').count())
     df = relate_dfs(df, [df_labeled, df_ml])
 
     df_train =  df[df.cluster != -1]       
@@ -87,21 +93,8 @@ while LM_final - LM_previous > 0:
         score = clf.score(list(df_validation.features), list(df_validation.cluster))
         print("The real score for {} was {}".format(name, round(score,2)))
     
-    #indexes = random.sample(range(len(df)), int(len(df)))       
-    #for i in indexes:
-    for i, row in df.iterrows():
-        #message = df.iloc[i].features
-        message = row.features
-        predictions = []
-        for name, clf in zip(names, clfs):
-            predictions.append(clf.predict([message])[0])
-        #prediction = Counter(predictions).most_common(1)[0][0]
+    df = group_predict(df)
         
-        keys = list(Counter(predictions))
-        if len(keys) <= 1:
-            df.set_value(i,'cluster', keys[0])
-    
-    
     print(df.groupby('cluster').count())
     
     try:
@@ -128,7 +121,13 @@ os.remove('vocabulary.pkl')
 end = time.time()
 print("Total Run-Time:  {}".format(round((end - start)/60,2)))
 
+df_labeled = pd.read_pickle('labeled.pkl')
 
-
-
-        
+print(df.groupby('cluster').count())
+df_labeled = df_labeled[df_labeled.cluster != -1]
+df['answers'] = df['cluster']
+df['cluster'] = -1.0
+df = relate_dfs(df, [df_labeled])
+df = group_predict(df)
+print(df.groupby('cluster').count())
+print("Accuracy: {}%".format(round(df[df.cluster == df.answers].count().features / len(df) * 100, 2))) 
