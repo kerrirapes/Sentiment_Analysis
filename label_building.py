@@ -31,9 +31,9 @@ def relate_dfs(df_features, df_clusters):
 start = time.time()
 
 df_labeled = pd.read_pickle('labeled.pkl')
-df_labeled = df_labeled[df_labeled.cluster != -1]
 df_labeled, df_validation = train_test_split(df_labeled, test_size=0.10)
-
+df_labeled = df_labeled[df_labeled.cluster != -1]
+df_validation = df_validation[df_validation.cluster != -1]
 
 LM_final = 1
 LM_previous = 0
@@ -57,6 +57,7 @@ while LM_final - LM_previous > 0:
     
     df_validation = relate_dfs(df, [df_validation])
     df_validation = df_validation.copy()
+    df_validation = df_validation[df_validation.cluster != -1]
     print(df.groupby('cluster').count())
     df = relate_dfs(df, [df_labeled, df_ml])
 
