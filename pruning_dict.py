@@ -41,7 +41,7 @@ def remove_nonalphanumeric(message):
     
 def prune_vocab(vocabulary):
     #try:
-    labels = ['machine_labeled.pkl', 'labeled.pkl']
+    labels = [ 'labeled.pkl']
     df = pd.DataFrame()
     for l in labels:
         df_temp = pd.read_pickle(l)

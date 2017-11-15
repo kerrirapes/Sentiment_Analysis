@@ -22,6 +22,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 import Gaussian_hyperpara_selection
 import time
+import random
 
 
 df, features_master = exploring.preprocess_data()
@@ -41,7 +42,7 @@ df = df[df.cluster != -1]
 
 X_train, X_test, y_train, y_test = train_test_split(list(df.features),
                                                     list(df.cluster),
-                                                    test_size=0.33)
+                                                    test_size=0.5)
 
 names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
          "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
@@ -58,7 +59,7 @@ classifiers = [
     AdaBoostClassifier(),
     GaussianNB(),
     QuadraticDiscriminantAnalysis()]
-
+'''
 score_sum = 0
 best_score = 0
 best_classifier = ""
@@ -74,7 +75,7 @@ for name, clf in zip(names, classifiers):
 print("")
 print("The average score was {}".format(score_sum/len(names)))
 print("The best classifier was {} with a score of {}".format(best_classifier, best_score))
-
+'''
 
 start = time.time()
 best = {'score': 0,
@@ -94,15 +95,11 @@ def run_clf( **kwargs):
 #for solver_kw in ['lbfgs', 'sgd', 'adam']: 
 #    for activation_kw in ['identity',  'tanh']:
 findings = {}
-for _ in range(200): 
+for _ in range(1): 
     kwargs = Gaussian_hyperpara_selection.next_values(parameters, findings)
-    score = run_clf( **kwargs)
+    score = run_clf( **kwargs) + random.random()/1000
     findings[score] = kwargs
-    '''
-    print("Activation {} Solver {} Parameters {}".format(activation_kw, solver_kw,
-                                                                              findings[max(findings)]))
-    print("Score:   {}".format(run_clf(activation_kw, solver_kw, **findings[max(findings)])))
-    '''
+
     if score > best['score']:
         best['score'] = score
         #best['solver'] = solver_kw
@@ -113,12 +110,8 @@ for _ in range(200):
         print("BREAK FOR TIME")
         break
 
-'''            
-print("Activation {} Solver {} Parameters {}".format(best['activation'],
-                                                                          best['solver'],
-                                                                          best['parameters']))
-'''   
-print(findings)                                                                                        
+   
+                                                                                        
 print("Best Score:   {}".format(run_clf(**best['parameters'])))
 print(best['parameters'])
 
@@ -129,5 +122,77 @@ score = clf.score(X_test, y_test)
 print("Gaussian Classifier Score {}".format(score))
 
 
-os.remove('df.pkl')
-os.remove('vocabulary.pkl')
+start = time.time()
+
+best = {'parameters': {}, 'score': 0.0 }
+
+parameters = {"max_depth": [3, 100],
+              "min_samples_split": [2, 20],
+              "min_samples_leaf": [1, 20],
+              }
+
+def run_clf( **kwargs):
+    clf = DecisionTreeClassifier(**kwargs)
+    clf.fit(X_train, y_train)
+    score = clf.score(X_test, y_test)
+    return score
+
+
+findings = {}
+for _ in range(10): 
+    kwargs = Gaussian_hyperpara_selection.next_values(parameters, findings)
+    score = run_clf( **kwargs) + random.random()/1000
+    findings[score] = kwargs 
+
+    if score > best['score']:
+        best['score'] = score
+        best['parameters'] = findings[max(findings)]
+    if (time.time() - start) > 180:
+        start = time.time()
+        print("BREAK FOR TIME")
+        break
+
+                                                                                       
+print("Best Score:   {}".format(run_clf( **best['parameters'])))
+print(best['parameters'])
+DT = best
+
+
+
+best = {'parameters': {}, 'score': 0.0 }
+
+parameters = {"n_estimators": [25, 100],
+              "learning_rate": [0,1.0]
+              }
+
+base = DecisionTreeClassifier(**DT['parameters'])
+def run_clf(base, **kwargs):
+    clf = AdaBoostClassifier(algorithm='SAMME.R', base_estimator=base,**kwargs)
+    clf.fit(X_train, y_train)
+    score = clf.score(X_test, y_test)
+    return score
+
+
+findings = {}
+for _ in range(10): 
+    kwargs = Gaussian_hyperpara_selection.next_values(parameters, findings)
+    score = run_clf(base, **kwargs) + random.random()/1000
+    findings[score] = kwargs 
+
+    if score > best['score']:
+        best['score'] = score
+        best['parameters'] = findings[max(findings)]
+    if (time.time() - start) > 180:
+        start = time.time()
+        print("BREAK FOR TIME")
+        break
+    
+                                                                                       
+print("Best Score:   {}".format(run_clf(base, **best['parameters'])))
+print(best['parameters'])
+
+
+
+
+#os.remove('df.pkl')
+#os.remove('vocabulary.pkl')
