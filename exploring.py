@@ -55,15 +55,11 @@ def preprocess_data(percent_saved):
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 1000:
+                if i >= 500:
                    break
                 json_lines.append(json.loads(line))
            
         return pd.DataFrame.from_dict(json_lines)
-
-    
-    
-    
 
     try:
         df = load_obj('df')
@@ -71,7 +67,7 @@ def preprocess_data(percent_saved):
     except:
         df = load_json()
         df = df[['text']]
-        df = filter_repeat(df, percent_saved)
+        df = filter_repeat(df, 0.7)
         save_obj(df, 'df' )
     
     print("Original message count {}".format(len(df)))
@@ -96,6 +92,10 @@ def preprocess_data(percent_saved):
 
 
 def prepare_df_labeled(percent_saved):
+    try:
+        os.remove('vocabulary.pkl')
+    except:
+        pass
     df, features_master = preprocess_data(percent_saved)
     df["cluster"] = -1.0
     df_labeled = pd.read_pickle('labeled.pkl')
@@ -206,27 +206,3 @@ def pca_explore(df, features_master):
             print("")
         '''
 
-'''
-df_0 = pd.read_pickle('Group_0.pkl')
-df_1 = pd.read_pickle('Group_1.pkl')
-df_0 = df_0[['text']]
-df_1 = df_1[['text']]
-'''
-'''
-df = prepare_df_labeled(0.8)
-print("length to start {}".format(len(df))) 
-
-for df in [df]:
-    vocabulary = pruning_dict.build_vocabulary(df.text)
-    vocabulary = pruning_dict.prune_vocab(vocabulary, .7)
-    features_master = Counter(list(vocabulary.keys()))
-    df["features"] = [[0] * len(vocabulary)] * len(df)
-    df, dupl = label_features(df, features_master, False)
-    df2 = create_feature_dataframe(df, features_master)
-    N = cluster_search(df2)
-    df = cluster_filter(df, df2, N)
-    df = df.drop_duplicates(['text'], keep='first')
-print("length to end {}".format(len(df)))     
-
-'''
-preprocess_data(0.7)

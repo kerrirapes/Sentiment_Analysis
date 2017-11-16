@@ -7,6 +7,8 @@ Created on Sun Nov 12 23:35:08 2017
 Supervised learning
 """
 import os
+import warnings
+import numpy as np
 import exploring
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
@@ -31,24 +33,37 @@ def print_messages(df):
 
 def save_messages(df):
     df = df[['text', 'prediction']]
-    exploring.save_obj(df, 'Group_1&2' )
     for i in range(2):
         exploring.save_obj(df.groupby('prediction').get_group(i), 'Group_' + str(i))
+
+def split_set(df, test_size):
+    #df_training = df[df.cluster != -1]
+    #df = df[df.cluster == -1]
+    X_train, X_test, y_train, y_test = train_test_split(list(df.features),
+                                                        list(df.cluster),
+                                                        test_size=test_size)
+    return X_train, X_test, y_train, y_test
     
-def label_dataset(percent_saved):
+def best_classifier(df, percent_saved):
+
+    #warnings.filterwarnings("ignore", category=ConvergenceWarning) 
+    '''
+    def fxn():
+        warnings.warn("deprecated", ConvergenceWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fxn()
+     '''   
     def run_clf(clf, **kwargs):
-        clf.set_params(**kwargs)
-        clf.fit(X_train, y_train)
-        score = clf.score(X_test, y_test)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            clf.set_params(**kwargs)
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
         return score
     
-    df = exploring.prepare_df_labeled(percent_saved)     
-    df_training = df[df.cluster != -1]
-    df = df[df.cluster == -1]
-    
-    X_train, X_test, y_train, y_test = train_test_split(list(df_training.features),
-                                                        list(df_training.cluster),
-                                                        test_size=0.5)
+         
+    X_train, X_test, y_train, y_test = split_set(df, 0.5)
     
     best = {'score': 0, 'parameters': {}}
     best_overall = {'score': 0 , 'clf': None}
@@ -92,18 +107,31 @@ def label_dataset(percent_saved):
             best_overall['score'] = best['score']
             best_overall['clf'] = best['clf']
             
-    #print(best_overall)
-    #predictions = clf.predict(list(df.features))
-    #df['prediction'] = predictions
-    #print_messages(df)
-    #save_messages(df)
-    return round(best_overall['score'], 2)
-    
-percents = [1.0, .9, .8, .7, .6, .5, .4, .3, .2]
-scores = []
-for percent in percents:
-    scores.append(label_dataset(percent))
-for percent, score in zip(percents, scores):
-    print("The percentage {} scored {}".format(percent, score))
-os.remove('df.pkl')
-os.remove('vocabulary.pkl')
+
+    return best_overall['clf'], round(best_overall['score'], 2)
+
+def best_pruning_percent(clf, df):
+    percents = [1.0, .9, .8, .7, .6, .5, .4, .3, .2]
+    scores = []
+    for percent in percents:
+        df = exploring.prepare_df_labeled(percent)
+        X_train, X_test, y_train, y_test = split_set(df, 0.5)
+        clf.fit(X_train, y_train)
+        scores.append(clf.score(X_test, y_test))
+    percent = percents[np.argmax(scores)]
+    df = exploring.prepare_df_labeled(percent)
+    X_train, X_test, y_train, y_test = split_set(df, 0.9)
+    clf.fit(X_train, y_train)
+    for percent, score in zip(percents, scores):
+        print("The percentage {} scored {}".format(percent, score))
+    return clf, percents[np.argmax(scores)]
+
+def predict_cluster(clf, df):
+    predictions = clf.predict(list(df.features))
+    df['prediction'] = predictions
+    print_messages(df)
+    save_messages(df)
+    return df
+
+
+

@@ -40,63 +40,60 @@ def remove_nonalphanumeric(message):
         return message
     
 def prune_vocab(vocabulary, percent_saved):
-    #try:
-    labels = [ 'labeled.pkl']
-    df = pd.DataFrame()
-    for l in labels:
-        df_temp = pd.read_pickle(l)
-        df = pd.concat([df_temp, df], axis=0, join='outer', ignore_index=True)
-        df = df.drop_duplicates(subset='text', keep="first")
-    df = df.sort_values(by=['cluster'], ascending=False)
-    df =  df[df.cluster != -1]
-    df = df[pd.notnull(df['text'])]
-    df = df.reset_index(drop=True)
-
+    try:
+        labels = [ 'labeled.pkl']
+        df = pd.DataFrame()
+        for l in labels:
+            df_temp = pd.read_pickle(l)
+            df = pd.concat([df_temp, df], axis=0, join='outer', ignore_index=True)
+            df = df.drop_duplicates(subset='text', keep="first")
+        df =  df[df.cluster != -1]
+        df = df.reset_index(drop=True)
     
-    info = df.groupby('cluster').get_group(0)
-    info_v = build_vocabulary(info.text, word_drop=True)
-    info_w = info_v.keys()
-    express = df.groupby('cluster').get_group(1)
-    express_v = build_vocabulary(express.text, word_drop=True)
-    express_w = express_v.keys()
-    
-    common_v = info_v & express_v
-    common_w = common_v.keys()
-    
-    words = []
-    ratios = []
-    
-    for word in info_w:
-        if word not in common_w:
-            ratios.append(info_v[word])
+        
+        info = df.groupby('cluster').get_group(0)
+        info_v = build_vocabulary(info.text, word_drop=True)
+        info_w = info_v.keys()
+        express = df.groupby('cluster').get_group(1)
+        express_v = build_vocabulary(express.text, word_drop=True)
+        express_w = express_v.keys()
+        
+        common_v = info_v & express_v
+        common_w = common_v.keys()
+        
+        words = []
+        ratios = []
+        
+        for word in info_w:
+            if word not in common_w:
+                ratios.append(info_v[word])
+                words.append(word)
+        
+        for word in common_w:
+            ratios.append(info_v[word] / express_v[word])
             words.append(word)
+        
+        for word in express_w:
+            if word not in common_w:
+                ratios.append(express_v[word] * -1)
+                words.append(word)
+        
     
-    for word in common_w:
-        ratios.append(info_v[word] / express_v[word])
-        words.append(word)
+        threshold = int(len(words) * (percent_saved/2))
+        top20 = np.argsort(ratios)[-threshold:]
+        bottom20 = np.argsort(ratios)[:threshold]
     
-    for word in express_w:
-        if word not in common_w:
-            ratios.append(express_v[word] * -1)
-            words.append(word)
-    
+        polar_words = []
+        for group in [top20, bottom20]:
+            for index in group:
+                polar_words.append(words[index])
+        
+        
+        vocabulary = Counter(polar_words) & vocabulary
 
-    threshold = int(len(words) * (percent_saved/2))
-    top20 = np.argsort(ratios)[-threshold:]
-    bottom20 = np.argsort(ratios)[:threshold]
-
-    polar_words = []
-    for group in [top20, bottom20]:
-        for index in group:
-            polar_words.append(words[index])
-    
-    
-    vocabulary = Counter(polar_words) & vocabulary
-    #print(Counter(polar_words))
-    #print("Length of polar_words {}".format(len(polar_words)))
-    return vocabulary
-    #except:
-       # print("pruning error")
-       # return vocabulary
+        return vocabulary
+    except:
+       print("An error occured when attempting to prune the dictionary. Pruning was skipped.")
+       return vocabulary
 
 
