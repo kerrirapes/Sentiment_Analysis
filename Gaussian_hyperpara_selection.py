@@ -19,13 +19,15 @@ RESOLUTION = 100.0
 
 def hyperparam_wslist(scores, parameters, n_hidden_range):
     def fit_curve(parameters, scores, n_hidden_choices):
-            y_mean, y_std = gaussian_process(parameters, scores, n_hidden_choices)
-            y_max = max(scores)
-            y_highestexpected = (y_mean + 1.96 * y_std)
-            expected_improvement = y_highestexpected - y_max
-            expected_improvement[expected_improvement < 0] = 0
-            max_index = expected_improvement.argmax()
-            return n_hidden_choices[max_index]
+        #minimum value created to avoid very small scores being interpreted as NaN
+        scores = list(map(lambda x:max(x, 0.00001), scores))  
+        y_mean, y_std = gaussian_process(parameters, scores, n_hidden_choices)
+        y_max = max(scores)
+        y_highestexpected = (y_mean + 1.96 * y_std)
+        expected_improvement = y_highestexpected - y_max
+        expected_improvement[expected_improvement < 0] = 0
+        max_index = expected_improvement.argmax()
+        return n_hidden_choices[max_index]
         
     def gaussian_process(x_train, y_train, x_test):
         def vector_2d(array):

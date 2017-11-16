@@ -89,6 +89,22 @@ def preprocess_data():
     return df, features_master
 
 
+def prepare_df_labeled():
+    df, features_master = preprocess_data()
+    df["cluster"] = -1.0
+    df_labeled = pd.read_pickle('labeled.pkl')
+    
+    for i, row in df_labeled.iterrows():
+        if row.text in list(df.text):
+            idx = df.index[df['text'] == row.text]
+            df.set_value(idx[0],'cluster', row.cluster)
+    return df
+
+
+
+
+
+
 
 
 
