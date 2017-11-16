@@ -17,12 +17,12 @@ import time
 import os
 
 
-def relate_dfs(df_features, df_clusters):
+def relate_dfs(df_features, df_clusters, column_name='cluster'):
     for label in df_clusters:
         for i, row in label.iterrows():
             if row.text in list(df_features.text):
                 idx = df_features.index[df_features['text'] == row.text]
-                df_features.set_value(idx,'cluster', row.cluster)
+                df_features.set_value(idx, column_name, row.prediction)
     return df_features
 
 def survey_clfs(message):
@@ -45,6 +45,7 @@ def group_predict(df):
         predictions.append(Counter(survey_clfs(row.features)).most_common(1)[0][0])     
     return predictions
 
+'''
 start = time.time()
 
 df_labeled = pd.read_pickle('labeled.pkl')
@@ -135,7 +136,7 @@ print("Total Run-Time:  {}".format(round((end - start)/60,2)))
 df_validation['prediction'] = group_predict(df_validation)
 accuracy = df_validation[df_validation.cluster == df_validation.prediction].count().features / len(df_validation)
 print("Accuracy: {}%".format(round(accuracy * 100, 2)))
-
+'''
 '''
 df_labeled = pd.read_pickle('labeled.pkl')
 

@@ -36,8 +36,8 @@ def preprocess_data():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 3000:
-                   break
+                #if i >= 3000:
+                #   break
                 json_lines.append(json.loads(line))
            
         return pd.DataFrame.from_dict(json_lines)
@@ -66,11 +66,15 @@ def preprocess_data():
     except:
         df = load_json()
         df = df[['text']]
+        print("Len before drop {}".format(len(df)))
         df.drop_duplicates(['text'], keep='first')
+        print("Len after drop {}".format(len(df)))
         vocabulary = pruning_dict.build_vocabulary(df.text)
+        '''
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
         df, dupl = label_features(df, features_master, True)
+        '''
         save_obj(df, 'df' )
     
     print("Original message count {}".format(len(df)))
@@ -87,6 +91,10 @@ def preprocess_data():
     df, dupl = label_features(df, features_master, False)
     
     return df, features_master
+
+
+
+
 
 
 def prepare_df_labeled():
