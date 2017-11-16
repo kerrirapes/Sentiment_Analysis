@@ -29,21 +29,26 @@ def load_obj(name ):
     with open( name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def label_features(df, features_master, remove_dpls=False):
-        dupl = 0
+def label_features(df, features_master):
         for i,row in df.iterrows():
             message = pruning_dict.remove_nonalphanumeric(row.text)
             features = Counter(message.split()) & features_master
             features = features + features_master
             features = list(np.array(list(features.values())) - 1)
-            if remove_dpls == True and features in list(df.features):
-                dupl += 1
-                df.set_value(i,'features', None)
-                df = df[pd.notnull(df['features'])]
-            else:
-                df.set_value(i,'features',features)
+            df.set_value(i,'features',features)
+        return df
 
-        return df, dupl
+def filter_repeat(df, percent_saved):
+    vocabulary = pruning_dict.build_vocabulary(df.text)
+    vocabulary = pruning_dict.prune_vocab(vocabulary, percent_saved)
+    features_master = Counter(list(vocabulary.keys()))
+    df["features"] = [[0] * len(vocabulary)] * len(df)
+    df = label_features(df, features_master)
+    df2 = create_feature_dataframe(df, features_master)
+    N = cluster_search(df2)
+    df = cluster_filter(df, df2, N)
+    df = df.drop_duplicates(['text'], keep='first')
+    return df
 
 def preprocess_data(percent_saved):
     def load_json():
@@ -66,13 +71,7 @@ def preprocess_data(percent_saved):
     except:
         df = load_json()
         df = df[['text']]
-        print("Len before drop {}".format(len(df)))
-        df.drop_duplicates(['text'], keep='first')
-        print("Len after drop {}".format(len(df)))
-        vocabulary = pruning_dict.build_vocabulary(df.text)
-        features_master = Counter(list(vocabulary.keys()))
-        df["features"] = [[0] * len(vocabulary)] * len(df)
-        df, dupl = label_features(df, features_master, False)
+        df = filter_repeat(df, percent_saved)
         save_obj(df, 'df' )
     
     print("Original message count {}".format(len(df)))
@@ -82,11 +81,12 @@ def preprocess_data(percent_saved):
         print("Loading Vocabulary...")
     except:
         vocabulary = pruning_dict.build_vocabulary(df.text)
+        vocabulary = pruning_dict.prune_vocab(vocabulary, percent_saved)
         save_obj(vocabulary, 'vocabulary' )
-    vocabulary = pruning_dict.prune_vocab(vocabulary, percent_saved)
+    
     features_master = Counter(list(vocabulary.keys()))
     df["features"] = [[0] * len(vocabulary)] * len(df)
-    df, dupl = label_features(df, features_master, False)
+    df = label_features(df, features_master)
     
     return df, features_master
 
@@ -113,17 +113,12 @@ def prepare_df_labeled(percent_saved):
 
 
 
-def cluster_predict(df, df2, N):
+def cluster_filter(df, df2, N):
     clusterer = KMeans(n_clusters=N)
     clusterer.fit(df2)
-    preds = clusterer.predict(df2)
-    df["cluster"] = preds
-    
     transform = clusterer.transform(df2)
     df['d_from_center'] = [min(x)**2 for x in transform]
-    df['std'] = -1
-    stds = []
-    print("length before {}".format(len(df)))
+    df['cluster'] = [np.argmin(x) for x in transform]
     for cgroup in range(N):
         group = df.groupby('cluster').get_group(cgroup)
         sum_squares = group.d_from_center.sum()
@@ -131,24 +126,7 @@ def cluster_predict(df, df2, N):
         std = ((sum_squares / (N-1))**0.5) / mcount
         if std < 0.01:
             df = df.drop(group.index)
-            print("Dropped {}".format(cgroup))
-        else:
-            stds.append((cgroup,std))
-    print("length after {}".format(len(df)))
-    print(stds)
-        
-        
-    score = silhouette_score(df2, preds)
-    print("The score for {} n_cluster in KMeans is {}".format(N,score))
-    print("")
-    print(df.groupby('cluster').count())
-    print("")
-
-    for cgroup, std in stds:
-        print("Messages from group {}:             STD = {}".format(cgroup, std))
-        for message in df.groupby('cluster').get_group(cgroup).text.head(10):
-            print(message)
-        print("")
+    return df
 
 
 
@@ -165,24 +143,16 @@ def cluster_search(df2):
     search_range = min(50, len(df2))
     best_score = 0
     best_n = 1
-    '''
-    for n in range(2,16):
-        clusterer = GaussianMixture(n_components=n)
-        clusterer.fit(df2)
-        preds = clusterer.predict(df2)
-        #centers = clusterer.means_
-        score = silhouette_score(df2,preds)
-        print("The score for {} n_components in GaussianMixture is {}".format(n,score))
-        best_score, best_n = score_n(score, best_score, best_n)
-    '''
     for n in range(2,search_range): 
         clusterer = KMeans(n_clusters=n)
         clusterer.fit(df2)
         preds = clusterer.predict(df2)
-        #centers = clusterer.cluster_centers_
-        score = silhouette_score(df2,preds)
-        #print("The score for {} n_cluster in KMeans is {}".format(n,score))
-        best_score, best_n = score_n(score, best_score, best_n)
+        try:
+            score = silhouette_score(df2,preds)
+            best_score, best_n = score_n(score, best_score, best_n)
+        except:
+            pass
+        
     return best_n
 
 def create_feature_dataframe(df, features_master):
@@ -227,14 +197,14 @@ def pca_explore(df, features_master):
         print(df.groupby('cluster').count())
         print("")
         
-        
+        '''
         cgroups = range(N)
         for cgroup in cgroups:
             print("Messages from group {}".format(cgroup))
             for message in df.groupby('cluster').get_group(cgroup).text.head(3):
                 print(message)
             print("")
-    
+        '''
 
 '''
 df_0 = pd.read_pickle('Group_0.pkl')
@@ -242,8 +212,9 @@ df_1 = pd.read_pickle('Group_1.pkl')
 df_0 = df_0[['text']]
 df_1 = df_1[['text']]
 '''
-
-df = prepare_df_labeled(0.8) 
+'''
+df = prepare_df_labeled(0.8)
+print("length to start {}".format(len(df))) 
 
 for df in [df]:
     vocabulary = pruning_dict.build_vocabulary(df.text)
@@ -253,6 +224,9 @@ for df in [df]:
     df, dupl = label_features(df, features_master, False)
     df2 = create_feature_dataframe(df, features_master)
     N = cluster_search(df2)
-    cluster_predict(df, df2, N)
+    df = cluster_filter(df, df2, N)
+    df = df.drop_duplicates(['text'], keep='first')
+print("length to end {}".format(len(df)))     
 
-
+'''
+preprocess_data(0.7)
