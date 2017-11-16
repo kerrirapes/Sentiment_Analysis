@@ -6,7 +6,7 @@ Created on Sun Nov 12 23:35:08 2017
 
 Supervised learning
 """
-import os
+
 import warnings
 import numpy as np
 import exploring
@@ -21,39 +21,32 @@ import time
 import random
 
 
+def relate_dfs(df_features, df_cluster):
+    for i, row in df_cluster.iterrows():
+        if row.text in list(df_features.text):
+            idx = df_features.index[df_features['text'] == row.text]
+            df_features.set_value(idx, 'cluster', row.cluster)
+    return df_features
+
 def print_messages(df):
     try:
         for cgroup in range(2):
-            print("Messages from group {}".format(cgroup))
-            for message in df.groupby('prediction').get_group(cgroup).text.head(5):
+            print("Messages from Group {}".format(cgroup))
+            for message in df.groupby('prediction').get_group(cgroup).text.head(8):
                 print(message)
             print("")
     except:
-        print("Only one group")
+        print("Only one Group")
 
-def save_messages(df):
-    df = df[['text', 'prediction']]
-    for i in range(2):
-        exploring.save_obj(df.groupby('prediction').get_group(i), 'Group_' + str(i))
 
 def split_set(df, test_size):
-    #df_training = df[df.cluster != -1]
-    #df = df[df.cluster == -1]
     X_train, X_test, y_train, y_test = train_test_split(list(df.features),
                                                         list(df.cluster),
                                                         test_size=test_size)
     return X_train, X_test, y_train, y_test
     
 def best_classifier(df, percent_saved):
-
-    #warnings.filterwarnings("ignore", category=ConvergenceWarning) 
-    '''
-    def fxn():
-        warnings.warn("deprecated", ConvergenceWarning)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        fxn()
-     '''   
+  
     def run_clf(clf, **kwargs):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
@@ -97,12 +90,11 @@ def best_classifier(df, percent_saved):
                     best['clf'] = clf
                 if (time.time() - start) > 60:
                     start = time.time()
-                    print("BREAK FOR TIME")
                     break
             except:
                 break
                                                                                          
-        print("Best Score for the {} classifier:   {}".format(name, round(run_clf(clf, **best['parameters']),2)))
+        print("Best Score for the {} classifier:   {}".format(name, round(best['score'], 2)))
         if best['score'] > best_overall['score']:
             best_overall['score'] = best['score']
             best_overall['clf'] = best['clf']
@@ -110,27 +102,31 @@ def best_classifier(df, percent_saved):
 
     return best_overall['clf'], round(best_overall['score'], 2)
 
-def best_pruning_percent(clf, df):
+def best_pruning_percent(clf, validation_idx):
+    def generate_df(validation_idx):
+        df = exploring.prepare_df_labeled(percent)
+        df = df.drop(validation_idx)
+        df = df[df.cluster != -1]
+        return df
+    
     percents = [1.0, .9, .8, .7, .6, .5, .4, .3, .2]
     scores = []
     for percent in percents:
-        df = exploring.prepare_df_labeled(percent)
+        df = generate_df(validation_idx)
         X_train, X_test, y_train, y_test = split_set(df, 0.5)
         clf.fit(X_train, y_train)
         scores.append(clf.score(X_test, y_test))
     percent = percents[np.argmax(scores)]
-    df = exploring.prepare_df_labeled(percent)
-    X_train, X_test, y_train, y_test = split_set(df, 0.9)
-    clf.fit(X_train, y_train)
-    for percent, score in zip(percents, scores):
-        print("The percentage {} scored {}".format(percent, score))
-    return clf, percents[np.argmax(scores)]
+    df = generate_df(validation_idx)
+    clf.fit(list(df.features), list(df.cluster))
+    for p, s in zip(percents, scores):
+        print("Using the Most Polarizing {}%:     {}".format(p*100, round(s,2)))
+    return clf, percent
 
 def predict_cluster(clf, df):
     predictions = clf.predict(list(df.features))
     df['prediction'] = predictions
     print_messages(df)
-    save_messages(df)
     return df
 
 

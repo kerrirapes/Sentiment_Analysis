@@ -48,7 +48,7 @@ def prune_vocab(vocabulary, percent_saved):
             df = pd.concat([df_temp, df], axis=0, join='outer', ignore_index=True)
             df = df.drop_duplicates(subset='text', keep="first")
         df =  df[df.cluster != -1]
-        df = df.reset_index(drop=True)
+        
     
         
         info = df.groupby('cluster').get_group(0)

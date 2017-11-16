@@ -8,11 +8,11 @@ MAIN
 
 import exploring
 import Supervised_Learning
-import pandas as pd
 import os
+from sklearn.model_selection import train_test_split
 
 
-print("Start")
+print("Preparing the Dataset")
 percent_saved = 0.7
 try:
     os.remove('df.pkl')
@@ -20,11 +20,34 @@ try:
 except:
     pass
 df = exploring.prepare_df_labeled(percent_saved)
-df_human = df[df.cluster != -1]    
+print("The Dataset Contains {} Unique Messages".format(len(df)))
+print("")
+df_human = df[df.cluster != -1]
+df_human, df_validation = train_test_split(df_human, test_size=0.10)
+validation_idx = list(df_validation.index)
+
+print("Finding the Best Classifier")   
 clf, score = Supervised_Learning.best_classifier(df_human, percent_saved)
-clf, pruning_percent = Supervised_Learning.best_pruning_percent(clf, df_human)
+print("")
+print("The Best Classifier is:")
+print(clf)
+print("")
+
+print("Optimizing the Vocabulary")
+clf, pruning_percent = Supervised_Learning.best_pruning_percent(clf, validation_idx)
+print("")
+
+print("Labeling the Data")
 df = exploring.prepare_df_labeled(pruning_percent)
-df_machine = df[df.cluster == -1] 
-df_machine = Supervised_Learning.predict_cluster(clf, df)
+df_machine = df[df.cluster == -1].copy()
+df_machine = Supervised_Learning.predict_cluster(clf, df_machine)
+print("{} Entries Have Now Been Labeled".format((len(df_machine))))
+print("")
+
 exploring.save_obj(df_machine, 'df_Machine_Labeled')
+
+df_validation = Supervised_Learning.relate_dfs(df, df_validation)
+df_validation = df_validation[df.cluster != -1]
+score = clf.score(list(df_validation.features), list(df_validation.cluster))
+print("The Final Validation Score is {}".format(round(score, 2)))
 print("Done")
