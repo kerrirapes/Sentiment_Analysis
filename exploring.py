@@ -29,21 +29,7 @@ def load_obj(name ):
     with open( name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-
-
-def preprocess_data(percent_saved):
-    def load_json():
-        with open(json_location, 'r') as json_data:
-            json_lines = []
-            for i,line in enumerate(json_data):
-                if i >= 3000:
-                   break
-                json_lines.append(json.loads(line))
-           
-        return pd.DataFrame.from_dict(json_lines)
-
-    
-    def label_features(df, features_master, remove_dpls=False):
+def label_features(df, features_master, remove_dpls=False):
         dupl = 0
         for i,row in df.iterrows():
             message = pruning_dict.remove_nonalphanumeric(row.text)
@@ -58,6 +44,20 @@ def preprocess_data(percent_saved):
                 df.set_value(i,'features',features)
 
         return df, dupl
+
+def preprocess_data(percent_saved):
+    def load_json():
+        with open(json_location, 'r') as json_data:
+            json_lines = []
+            for i,line in enumerate(json_data):
+                if i >= 1000:
+                   break
+                json_lines.append(json.loads(line))
+           
+        return pd.DataFrame.from_dict(json_lines)
+
+    
+    
     
 
     try:
@@ -72,7 +72,7 @@ def preprocess_data(percent_saved):
         vocabulary = pruning_dict.build_vocabulary(df.text)
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
-        df, dupl = label_features(df, features_master, True)
+        df, dupl = label_features(df, features_master, False)
         save_obj(df, 'df' )
     
     print("Original message count {}".format(len(df)))
@@ -113,6 +113,44 @@ def prepare_df_labeled(percent_saved):
 
 
 
+def cluster_predict(df, df2, N):
+    clusterer = KMeans(n_clusters=N)
+    clusterer.fit(df2)
+    preds = clusterer.predict(df2)
+    df["cluster"] = preds
+    
+    transform = clusterer.transform(df2)
+    df['d_from_center'] = [min(x)**2 for x in transform]
+    df['std'] = -1
+    stds = []
+    print("length before {}".format(len(df)))
+    for cgroup in range(N):
+        group = df.groupby('cluster').get_group(cgroup)
+        sum_squares = group.d_from_center.sum()
+        mcount = group.d_from_center.count()
+        std = ((sum_squares / (N-1))**0.5) / mcount
+        if std < 0.01:
+            df = df.drop(group.index)
+            print("Dropped {}".format(cgroup))
+        else:
+            stds.append((cgroup,std))
+    print("length after {}".format(len(df)))
+    print(stds)
+        
+        
+    score = silhouette_score(df2, preds)
+    print("The score for {} n_cluster in KMeans is {}".format(N,score))
+    print("")
+    print(df.groupby('cluster').count())
+    print("")
+
+    for cgroup, std in stds:
+        print("Messages from group {}:             STD = {}".format(cgroup, std))
+        for message in df.groupby('cluster').get_group(cgroup).text.head(10):
+            print(message)
+        print("")
+
+
 
 
 
@@ -124,8 +162,10 @@ def cluster_search(df2):
             best_score = score
             best_n = n
         return best_score, best_n
+    search_range = min(50, len(df2))
     best_score = 0
     best_n = 1
+    '''
     for n in range(2,16):
         clusterer = GaussianMixture(n_components=n)
         clusterer.fit(df2)
@@ -134,13 +174,14 @@ def cluster_search(df2):
         score = silhouette_score(df2,preds)
         print("The score for {} n_components in GaussianMixture is {}".format(n,score))
         best_score, best_n = score_n(score, best_score, best_n)
-    for n in range(2,16): 
+    '''
+    for n in range(2,search_range): 
         clusterer = KMeans(n_clusters=n)
         clusterer.fit(df2)
         preds = clusterer.predict(df2)
         #centers = clusterer.cluster_centers_
         score = silhouette_score(df2,preds)
-        print("The score for {} n_cluster in KMeans is {}".format(n,score))
+        #print("The score for {} n_cluster in KMeans is {}".format(n,score))
         best_score, best_n = score_n(score, best_score, best_n)
     return best_n
 
@@ -190,12 +231,28 @@ def pca_explore(df, features_master):
         cgroups = range(N)
         for cgroup in cgroups:
             print("Messages from group {}".format(cgroup))
-            for message in df.groupby('cluster').get_group(cgroup).text.head(10):
+            for message in df.groupby('cluster').get_group(cgroup).text.head(3):
                 print(message)
             print("")
     
 
+'''
+df_0 = pd.read_pickle('Group_0.pkl')
+df_1 = pd.read_pickle('Group_1.pkl')
+df_0 = df_0[['text']]
+df_1 = df_1[['text']]
+'''
 
+df = prepare_df_labeled(0.8) 
 
+for df in [df]:
+    vocabulary = pruning_dict.build_vocabulary(df.text)
+    vocabulary = pruning_dict.prune_vocab(vocabulary, .7)
+    features_master = Counter(list(vocabulary.keys()))
+    df["features"] = [[0] * len(vocabulary)] * len(df)
+    df, dupl = label_features(df, features_master, False)
+    df2 = create_feature_dataframe(df, features_master)
+    N = cluster_search(df2)
+    cluster_predict(df, df2, N)
 
 
