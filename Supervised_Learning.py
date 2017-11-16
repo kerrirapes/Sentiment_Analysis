@@ -6,7 +6,7 @@ Created on Sun Nov 12 23:35:08 2017
 
 Supervised learning
 """
-
+import os
 import exploring
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
@@ -35,14 +35,14 @@ def save_messages(df):
     for i in range(2):
         exploring.save_obj(df.groupby('prediction').get_group(i), 'Group_' + str(i))
     
-def label_dataset():
+def label_dataset(percent_saved):
     def run_clf(clf, **kwargs):
         clf.set_params(**kwargs)
         clf.fit(X_train, y_train)
         score = clf.score(X_test, y_test)
         return score
     
-    df = exploring.prepare_df_labeled()     
+    df = exploring.prepare_df_labeled(percent_saved)     
     df_training = df[df.cluster != -1]
     df = df[df.cluster == -1]
     
@@ -80,7 +80,7 @@ def label_dataset():
                     best['score'] = score
                     best['parameters'] = findings[max(findings)]
                     best['clf'] = clf
-                if (time.time() - start) > 300:
+                if (time.time() - start) > 60:
                     start = time.time()
                     print("BREAK FOR TIME")
                     break
@@ -92,12 +92,18 @@ def label_dataset():
             best_overall['score'] = best['score']
             best_overall['clf'] = best['clf']
             
-    print(best_overall)
-    predictions = clf.predict(list(df.features))
-    df['prediction'] = predictions
+    #print(best_overall)
+    #predictions = clf.predict(list(df.features))
+    #df['prediction'] = predictions
     #print_messages(df)
-    save_messages(df)
+    #save_messages(df)
+    return round(best_overall['score'], 2)
     
-    
-    #os.remove('df.pkl')
-    #os.remove('vocabulary.pkl')
+percents = [1.0, .9, .8, .7, .6, .5, .4, .3, .2]
+scores = []
+for percent in percents:
+    scores.append(label_dataset(percent))
+for percent, score in zip(percents, scores):
+    print("The percentage {} scored {}".format(percent, score))
+os.remove('df.pkl')
+os.remove('vocabulary.pkl')

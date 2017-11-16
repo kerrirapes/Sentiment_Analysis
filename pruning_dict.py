@@ -39,7 +39,7 @@ def remove_nonalphanumeric(message):
         print(message)
         return message
     
-def prune_vocab(vocabulary):
+def prune_vocab(vocabulary, percent_saved):
     #try:
     labels = [ 'labeled.pkl']
     df = pd.DataFrame()
@@ -81,7 +81,7 @@ def prune_vocab(vocabulary):
             words.append(word)
     
 
-    threshold = int(len(words) * .15)
+    threshold = int(len(words) * (percent_saved/2))
     top20 = np.argsort(ratios)[-threshold:]
     bottom20 = np.argsort(ratios)[:threshold]
 

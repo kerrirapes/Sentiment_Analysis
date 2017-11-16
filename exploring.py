@@ -31,13 +31,13 @@ def load_obj(name ):
 
 
 
-def preprocess_data():
+def preprocess_data(percent_saved):
     def load_json():
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                #if i >= 3000:
-                #   break
+                if i >= 3000:
+                   break
                 json_lines.append(json.loads(line))
            
         return pd.DataFrame.from_dict(json_lines)
@@ -70,11 +70,9 @@ def preprocess_data():
         df.drop_duplicates(['text'], keep='first')
         print("Len after drop {}".format(len(df)))
         vocabulary = pruning_dict.build_vocabulary(df.text)
-        '''
         features_master = Counter(list(vocabulary.keys()))
         df["features"] = [[0] * len(vocabulary)] * len(df)
         df, dupl = label_features(df, features_master, True)
-        '''
         save_obj(df, 'df' )
     
     print("Original message count {}".format(len(df)))
@@ -85,7 +83,7 @@ def preprocess_data():
     except:
         vocabulary = pruning_dict.build_vocabulary(df.text)
         save_obj(vocabulary, 'vocabulary' )
-    vocabulary = pruning_dict.prune_vocab(vocabulary)
+    vocabulary = pruning_dict.prune_vocab(vocabulary, percent_saved)
     features_master = Counter(list(vocabulary.keys()))
     df["features"] = [[0] * len(vocabulary)] * len(df)
     df, dupl = label_features(df, features_master, False)
@@ -97,8 +95,8 @@ def preprocess_data():
 
 
 
-def prepare_df_labeled():
-    df, features_master = preprocess_data()
+def prepare_df_labeled(percent_saved):
+    df, features_master = preprocess_data(percent_saved)
     df["cluster"] = -1.0
     df_labeled = pd.read_pickle('labeled.pkl')
     
