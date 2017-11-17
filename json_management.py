@@ -91,7 +91,7 @@ def preprocess_data(percent_saved):
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 500:
+                if i >= 150:
                    break
                 json_lines.append(json.loads(line))
            

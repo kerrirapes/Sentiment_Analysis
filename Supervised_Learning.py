@@ -62,12 +62,12 @@ def best_classifier(df, percent_saved):
     best_overall = {'score': 0 , 'clf': None}
     names = ["NerualNet", "DecisionTree", "AdaBoost", "GaussianProcess"]
     
-    parameters_SVC = {"hidden_layer_sizes": [25, 500], "alpha": [0,1.0]}
+    parameters_MLP = {"hidden_layer_sizes": [25, 500], "alpha": [0,1.0]}
     parameters_DT = {"max_depth": [3, 100], "min_samples_split": [2, 20],"min_samples_leaf": [1, 20]}
     parameters_Ada = {"n_estimators": [25, 100],"learning_rate": [0,1.0] }
     parameters_Gauss = {}
     
-    parameters = [parameters_SVC, parameters_DT, parameters_Ada, parameters_Gauss]
+    parameters = [parameters_MLP, parameters_DT, parameters_Ada, parameters_Gauss]
     
     clfs = [MLPClassifier( max_iter=500),
             DecisionTreeClassifier(),
