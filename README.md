@@ -12,6 +12,8 @@ To evaluate our solution will we use the score method from our supervised learni
 Because our solution is binary (Genuine or Motivated) our benchmark will be random guessing. If labels were assigned at random the program should score about 50%. 
 Analysis
 
+*Note: To learn more about this project see the full report in Report.pdf*
+
 ## Execution
 
 To run this program open the Main.py and execute. 
@@ -19,4 +21,4 @@ After the program has run the labeled output will be saved to df_Machine_Labeled
 
 To change the JSON file or number of entries from the JSON file that are loaded into the DataFrame. Open the json_management.py and toggle the constants at the top of the script.
 
-Note: This program retrains with every execution. If a JSON file does not contain the same entries at the labeled.py file the results will not be as expected.
+*Note: This program retrains with every execution. If a JSON file does not contain the same entries at the labeled.py file the results will not be as expected.*

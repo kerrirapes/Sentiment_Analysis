@@ -44,15 +44,20 @@ print("Labeling the Data")
 df = json_management.prepare_df_labeled(pruning_percent)
 df_machine = df[df.cluster == -1].copy()
 df_machine = Supervised_Learning.predict_cluster(clf, df_machine)
+total = len(df_machine)
 motivated = len(df[df['cluster'] == 0])
-print(motivated)
 genuine = len(df[df['cluster'] == 1])
-print("{} Entries Have Now Been Labeled".format((len(df_machine))))
-print("Finacially Motivated: {}  ({}%)       "
-      "Genuine Expression: {}  ({}%)".format(motivated,
-                                             round(100 * motivated/len(df_machine), 2),
+l_total = motivated + genuine
+print("{} Entries Have Now Been Labeled and"
+      " {} Entries Have Been Marked As Spam" .format(l_total,
+                                                         total - l_total ))
+print("Finacially Motivated: {}/{}  ({}%)       "
+      "Genuine Expression: {}/{}  ({}%)".format(motivated,
+                                                l_total,
+                                             round(100 * motivated/l_total, 2),
                                              genuine,
-                                             round(100 * genuine/len(df_machine), 2)))
+                                             l_total,
+                                             round(100 * genuine/l_total, 2)))
 print("")
 
 json_management.save_obj(df_machine, 'df_Machine_Labeled')

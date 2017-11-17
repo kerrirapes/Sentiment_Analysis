@@ -2,7 +2,7 @@
 """
 Spyder Editor
 
-This is a temporary script file.
+The loading and management of the twitter JSON file
 """
 
 import pandas as pd
@@ -11,14 +11,13 @@ from collections import Counter
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-from sklearn.decomposition import PCA
 import pruning_dict
 import os.path
 import pickle
 
 
 json_location = "D:\Intelligens\challenge_en.json"
-MAX_ENTRIES = 10000
+MAX_ENTRIES = 100
 
 def save_obj(obj, name ):
     with open( name + '.pkl', 'wb') as f:
@@ -134,61 +133,3 @@ def prepare_df_labeled(percent_saved):
             df.set_value(idx[0],'cluster', row.cluster)
     return df
 
-
-
-
-
-
-
-
-
-
-
-'''
-def pca_components(df, features_master):
-    df2 = create_feature_dataframe(df, features_master)
-    pca = PCA(n_components=10)
-    pca.fit(df2)
-    print("Explained_variance_ratio: {} ".format(pca.explained_variance_ratio_))
-    return pca.transform(df2)
-
-def pca_explore(df, features_master):
-    for pca_components in range(1,2):
-        print("pca_components: {}".format(pca_components))
-        
-        #print(len(df2))
-        # Generate PCA results plot
-        #pca_results = vs.pca_results(df2, pca)
-        #pca_results.cumsum()
-        
-        N = 2
-        search = False
-        if search == True:
-            N = cluster_search(df2)
-        
-        
-        clusterer = KMeans(n_clusters=N)
-        clusterer.fit(df2)
-        
-        # Predict the cluster for each data point
-        preds = clusterer.predict(df2)
-        df["cluster"] = preds
-        # Find the cluster centers
-        centers = clusterer.cluster_centers_
-        
-        # Calculate the mean silhouette coefficient for the number of clusters chosen
-        score = silhouette_score(df2,preds)
-        print("The score for {} n_cluster in KMeans is {}".format(N,score))
-        print("")
-        print(df.groupby('cluster').count())
-        print("")
-        
-        
-        cgroups = range(N)
-        for cgroup in cgroups:
-            print("Messages from group {}".format(cgroup))
-            for message in df.groupby('cluster').get_group(cgroup).text.head(3):
-                print(message)
-            print("")
-        
-'''
