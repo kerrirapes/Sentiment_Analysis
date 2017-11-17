@@ -18,6 +18,7 @@ import pickle
 
 
 json_location = "D:\Intelligens\challenge_en.json"
+MAX_ENTRIES = 10000
 
 def save_obj(obj, name ):
     with open( name + '.pkl', 'wb') as f:
@@ -91,7 +92,7 @@ def preprocess_data(percent_saved):
         with open(json_location, 'r') as json_data:
             json_lines = []
             for i,line in enumerate(json_data):
-                if i >= 150:
+                if i >= MAX_ENTRIES:
                    break
                 json_lines.append(json.loads(line))
            
