@@ -9,7 +9,7 @@ Supervised learning
 
 import warnings
 import numpy as np
-import exploring
+import json_management
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -104,7 +104,7 @@ def best_classifier(df, percent_saved):
 
 def best_pruning_percent(clf, validation_idx):
     def generate_df(validation_idx):
-        df = exploring.prepare_df_labeled(percent)
+        df = json_management.prepare_df_labeled(percent)
         df = df.drop(validation_idx)
         df = df[df.cluster != -1]
         return df

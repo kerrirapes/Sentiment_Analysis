@@ -49,7 +49,7 @@ def pca_results(good_data, pca):
 	# Return a concatenated DataFrame
 	return pd.concat([variance_ratios, components], axis = 1)
 
-def cluster_results(reduced_data, preds, centers, pca_samples):
+def cluster_results(reduced_data, preds, centers):
 	'''
 	Visualizes the PCA-reduced cluster data in two dimensions
 	Adds cues for cluster centers and student-selected sample data
@@ -75,9 +75,7 @@ def cluster_results(reduced_data, preds, centers, pca_samples):
 	               alpha = 1, linewidth = 2, marker = 'o', s=200);
 	    ax.scatter(x = c[0], y = c[1], marker='$%d$'%(i), alpha = 1, s=100);
 
-	# Plot transformed sample points 
-	ax.scatter(x = pca_samples[:,0], y = pca_samples[:,1], \
-	           s = 150, linewidth = 4, color = 'black', marker = 'x');
+
 
 	# Set plot title
 	ax.set_title("Cluster Learning on PCA-Reduced Data - Centroids Marked by Number\nTransformed Sample Data Marked by Black Cross");
@@ -161,3 +159,10 @@ def channel_results(reduced_data, outliers, pca_samples):
 
 	# Set plot title
 	ax.set_title("PCA-Reduced Data Labeled by 'Channel'\nTransformed Sample Data Circled");
+    
+def pca_components(df, features_master):
+    df2 = create_feature_dataframe(df, features_master)
+    pca = PCA(n_components=10)
+    pca.fit(df2)
+    print("Explained_variance_ratio: {} ".format(pca.explained_variance_ratio_))
+    return pca.transform(df2)
