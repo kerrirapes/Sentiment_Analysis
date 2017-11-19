@@ -17,7 +17,7 @@ import pickle
 
 
 json_location = "D:\Intelligens\challenge_en.json"
-MAX_ENTRIES = 100
+MAX_ENTRIES = 5000
 
 def save_obj(obj, name ):
     with open( name + '.pkl', 'wb') as f:
@@ -42,13 +42,27 @@ def cluster_filter(df, df2, N):
     transform = clusterer.transform(df2)
     df['d_from_center'] = [min(x)**2 for x in transform]
     df['cluster'] = [np.argmin(x) for x in transform]
+    d_center = []
     for cgroup in range(N):
         group = df.groupby('cluster').get_group(cgroup)
-        sum_squares = group.d_from_center.sum()
-        mcount = group.d_from_center.count()
-        std = ((sum_squares / (N-1))**0.5) / mcount
-        if std < 0.01:
-            df = df.drop(group.index)
+        for d in group.d_from_center:
+            d_center.append(d)
+    d_center = np.array(d_center)
+    for cgroup in range(N):
+        gscore = 0
+        group = df.groupby('cluster').get_group(cgroup)
+        for i, row in group.iterrows():
+            z = (row.d_from_center - np.mean(d_center)) / np.std(d_center)
+            if z < -0.68:
+                gscore += 1
+        gpercent = gscore/len(group)
+        if len(group) > 1 and gpercent > .9:
+            print("Identified the following message as SPAM.")
+            print("Found {} messages of the same form.".format(len(group)))
+            for message in group.text.head(1):
+                print(message)
+            print("")
+            df = df.drop(group.index)    
     return df
         
 def cluster_search(df2):
