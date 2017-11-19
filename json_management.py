@@ -40,23 +40,28 @@ def cluster_filter(df, df2, N):
     clusterer = KMeans(n_clusters=N)
     clusterer.fit(df2)
     transform = clusterer.transform(df2)
-    df['d_from_center'] = [min(x)**2 for x in transform]
-    df['cluster'] = [np.argmin(x) for x in transform]
     d_center = []
-    for cgroup in range(N):
-        group = df.groupby('cluster').get_group(cgroup)
-        for d in group.d_from_center:
-            d_center.append(d)
+    cluster = []
+    for x in transform:
+        d_center.append(min(x)**2)
+        cluster.append(np.argmin(x))
+    
+    #d_center = [min(x)**2 for x in transform]
+    df['d_from_center'] = d_center
+    df['cluster'] = cluster
     d_center = np.array(d_center)
+    mean = np.mean(d_center)
+    std = np.std(d_center)
     for cgroup in range(N):
         gscore = 0
         group = df.groupby('cluster').get_group(cgroup)
         for i, row in group.iterrows():
-            z = (row.d_from_center - np.mean(d_center)) / np.std(d_center)
+            z = (row.d_from_center - mean) / std
             if z < -0.68:
                 gscore += 1
-        gpercent = gscore/len(group)
-        if len(group) > 1 and gpercent > .9:
+        glength = len(group)
+        gpercent = gscore/glength
+        if glength > 1 and gpercent > .9:
             print("Identified the following message as SPAM.")
             print("Found {} messages of the same form.".format(len(group)))
             for message in group.text.head(1):
