@@ -17,7 +17,7 @@ import pickle
 
 
 json_location = "D:\Intelligens\challenge_en.json"
-MAX_ENTRIES = 5000
+MAX_ENTRIES = 1000
 
 def save_obj(obj, name ):
     with open( name + '.pkl', 'wb') as f:
@@ -45,8 +45,6 @@ def cluster_filter(df, df2, N):
     for x in transform:
         d_center.append(min(x)**2)
         cluster.append(np.argmin(x))
-    
-    #d_center = [min(x)**2 for x in transform]
     df['d_from_center'] = d_center
     df['cluster'] = cluster
     d_center = np.array(d_center)
@@ -102,7 +100,9 @@ def filter_repeat(df, percent_saved):
     df2 = create_feature_dataframe(df, features_master)
     N = cluster_search(df2)
     df = cluster_filter(df, df2, N)
+    l_before = len(df)
     df = df.drop_duplicates(['text'], keep='first')
+    print("{} other messages were found to be duplicates and removed.".format(l_before - len(df)))
     return df
 
 def preprocess_data(percent_saved):

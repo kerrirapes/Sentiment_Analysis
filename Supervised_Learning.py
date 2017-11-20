@@ -111,16 +111,19 @@ def best_pruning_percent(clf, validation_idx):
     
     percents = [1.0, .9, .8, .7, .6, .5, .4, .3, .2]
     scores = []
-    for percent in percents:
+    for i, percent in enumerate(percents):
         df = generate_df(validation_idx)
         X_train, X_test, y_train, y_test = split_set(df, 0.5)
         clf.fit(X_train, y_train)
         scores.append(clf.score(X_test, y_test))
+        print("Using the Most Polarizing {}%:     {}".format(percent*100, round(scores[i],2)))
     percent = percents[np.argmax(scores)]
     df = generate_df(validation_idx)
     clf.fit(list(df.features), list(df.cluster))
+    '''
     for p, s in zip(percents, scores):
         print("Using the Most Polarizing {}%:     {}".format(p*100, round(s,2)))
+    '''
     return clf, percent
 
 def predict_cluster(clf, df):

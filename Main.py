@@ -22,11 +22,11 @@ except:
     pass
 df = json_management.prepare_df_labeled(pruning_percent)
 print("The Dataset Contains {} Unique Messages".format(len(df)))
-print("")
 df_human = df[df.cluster != -1]
 df_human, df_validation = train_test_split(df_human, test_size=0.10)
 print("There are {} training messages and {} validation messages".format(len(df_human),
                                                                              len(df_validation)))
+print("")
 validation_idx = list(df_validation.index)
 
 print("Finding the Best Classifier")   
