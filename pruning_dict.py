@@ -39,9 +39,9 @@ def remove_nonalphanumeric(message):
         print(message)
         return message
     
-def prune_vocab(vocabulary, percent_saved):
-    try:
-        labels = [ 'labeled.pkl']
+def prune_vocab(vocabulary, labels, percent_saved):
+   # try:
+        
         df = pd.DataFrame()
         for l in labels:
             df_temp = pd.read_pickle(l)
@@ -92,8 +92,8 @@ def prune_vocab(vocabulary, percent_saved):
         vocabulary = Counter(polar_words) & vocabulary
 
         return vocabulary
-    except:
-       print("An error occured when attempting to prune the dictionary. Pruning was skipped.")
-       return vocabulary
+   # except:
+    #   print("An error occured when attempting to prune the dictionary. Pruning was skipped.")
+    #   return vocabulary
 
 

@@ -17,7 +17,7 @@ import pickle
 
 
 json_location = "D:\Intelligens\challenge_en.json"
-MAX_ENTRIES = 1000
+MAX_ENTRIES = 2000
 
 def save_obj(obj, name ):
     with open( name + '.pkl', 'wb') as f:
@@ -76,7 +76,7 @@ def cluster_search(df2):
         return best_score, best_n
     search_range = min(50, len(df2))
     best_score = 0
-    best_n = 1
+    best_n = 2
     for n in range(2,search_range): 
         clusterer = KMeans(n_clusters=n)
         clusterer.fit(df2)
@@ -93,7 +93,7 @@ def create_feature_dataframe(df, features_master):
 
 def filter_repeat(df, percent_saved):
     vocabulary = pruning_dict.build_vocabulary(df.text)
-    vocabulary = pruning_dict.prune_vocab(vocabulary, percent_saved)
+    vocabulary = pruning_dict.prune_vocab(vocabulary, ['labeled.pkl'], percent_saved)
     features_master = Counter(list(vocabulary.keys()))
     df["features"] = [[0] * len(vocabulary)] * len(df)
     df = label_features(df, features_master)
@@ -128,7 +128,7 @@ def preprocess_data(percent_saved):
         vocabulary = load_obj('vocabulary')
     except:
         vocabulary = pruning_dict.build_vocabulary(df.text)
-        vocabulary = pruning_dict.prune_vocab(vocabulary, percent_saved)
+        vocabulary = pruning_dict.prune_vocab(vocabulary, ['labeled.pkl'], percent_saved)
         save_obj(vocabulary, 'vocabulary' )
     
     features_master = Counter(list(vocabulary.keys()))
